@@ -1,2 +1,3 @@
-import { test } from './test.js';
+import { test } from '';
 
+test();
