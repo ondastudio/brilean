@@ -159,17 +159,34 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const stats = uniqueStats;
+  const isMobile =
+    (typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(max-width: 768px)").matches) ||
+    ScrollTrigger.isTouch;
+  const perSlidePercent = isMobile ? 5 : 20; // reduce distance per slide, smaller on mobile
+  const scrubValue = isMobile ? 0.25 : true; // light smoothing on mobile to reduce required drag
+  const snapConfig =
+    stats.length > 1
+      ? {
+          snapTo: 1 / (stats.length - 1),
+          duration: { min: 0.08, max: 0.25 },
+          ease: "power1.inOut",
+          directional: true,
+        }
+      : 1;
   const tl = gsap.timeline({
     defaults: { ease: "none" },
     scrollTrigger: {
       trigger: ".stats-section",
       start: "center center",
-      end: "+=" + (stats.length - 1) * 300 + "%",
+      end: "+=" + (stats.length - 1) * perSlidePercent + "%",
       pin: true,
-      scrub: true,
+      scrub: scrubValue,
       pinType: "transform", // force transform pinning for iOS Safari / transformed parents
       anticipatePin: 1,
       invalidateOnRefresh: true,
+      snap: snapConfig,
       // markers: true,
     },
   });
@@ -202,6 +219,87 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
+  const activateStatIndex = (idx) => {
+    if (idx < 0 || idx >= stats.length) return;
+    if (window.__lastStatsIndex === undefined) window.__lastStatsIndex = -1;
+    if (idx === window.__lastStatsIndex) return;
+
+    const current = stats[idx];
+    if (!current) return;
+
+    const dataIdx = current.getAttribute("data-index");
+    updateDots(dataIdx);
+    showOnly(idx);
+
+    const numEl = current.querySelector(".stats-number");
+    if (numEl) {
+      if (numEl.dataset.odoInit !== "1") {
+        buildOdometer(numEl);
+        numEl.dataset.odoInit = "1";
+      }
+
+      const symbol = current.querySelector(".stats-symbol");
+      const desc = current.querySelector(".stats-description");
+
+      if (symbol) gsap.set(symbol, { y: 48, autoAlpha: 0, display: "block" });
+      if (desc) gsap.set(desc, { y: 96, autoAlpha: 0, display: "block" });
+
+      const odoTl = animateOdometer(numEl);
+      if (odoTl) {
+        const startAt = Math.min(0.2, odoTl.duration() * 0.3);
+
+        if (symbol) {
+          if (odoTl.duration() > 0) {
+            odoTl.call(
+              () =>
+                animateElement(
+                  current,
+                  ".stats-symbol",
+                  48,
+                  0.8,
+                  "back.out(1.6)"
+                ),
+              [],
+              startAt
+            );
+          } else {
+            animateElement(current, ".stats-symbol", 48, 0.8, "back.out(1.6)");
+          }
+        }
+
+        if (desc) {
+          const descStart = startAt + 0.12;
+          if (odoTl.duration() > descStart) {
+            odoTl.call(
+              () =>
+                animateElement(
+                  current,
+                  ".stats-description",
+                  96,
+                  1.4,
+                  "power4.out"
+                ),
+              [],
+              descStart
+            );
+          } else {
+            odoTl.eventCallback("onComplete", () =>
+              animateElement(
+                current,
+                ".stats-description",
+                96,
+                1.4,
+                "power4.out"
+              )
+            );
+          }
+        }
+      }
+    }
+
+    window.__lastStatsIndex = idx;
+  };
+
   dots.forEach((dot) => {
     dot.addEventListener("click", () => {
       const targetIdx = dot.getAttribute("data-index");
@@ -220,114 +318,26 @@ document.addEventListener("DOMContentLoaded", () => {
   ScrollTrigger.create({
     trigger: ".stats-section",
     start: "center center",
-    end: "+=" + (stats.length - 1) * 300 + "%",
+    end: "+=" + (stats.length - 1) * perSlidePercent + "%",
     onUpdate: (self) => {
       const idx = Math.min(
         Math.round(self.progress * (stats.length - 1)),
         stats.length - 1
       );
-      if (window.__lastStatsIndex === undefined) window.__lastStatsIndex = -1;
-
-      if (idx !== window.__lastStatsIndex) {
-        const current = stats[idx];
-        if (current) {
-          const dataIdx = current.getAttribute("data-index");
-          updateDots(dataIdx);
-          showOnly(idx);
-
-          const numEl = current.querySelector(".stats-number");
-          if (numEl) {
-            if (numEl.dataset.odoInit !== "1") {
-              buildOdometer(numEl);
-              numEl.dataset.odoInit = "1";
-            }
-
-            const symbol = current.querySelector(".stats-symbol");
-            const desc = current.querySelector(".stats-description");
-
-            if (symbol)
-              gsap.set(symbol, { y: 48, autoAlpha: 0, display: "block" });
-            if (desc) gsap.set(desc, { y: 96, autoAlpha: 0, display: "block" });
-
-            const odoTl = animateOdometer(numEl);
-            if (odoTl) {
-              const startAt = Math.min(0.2, odoTl.duration() * 0.3);
-
-              if (symbol) {
-                if (odoTl.duration() > 0) {
-                  odoTl.call(
-                    () =>
-                      animateElement(
-                        current,
-                        ".stats-symbol",
-                        48,
-                        0.8,
-                        "back.out(1.6)"
-                      ),
-                    [],
-                    startAt
-                  );
-                } else {
-                  animateElement(
-                    current,
-                    ".stats-symbol",
-                    48,
-                    0.8,
-                    "back.out(1.6)"
-                  );
-                }
-              }
-
-              if (desc) {
-                const descStart = startAt + 0.12;
-                if (odoTl.duration() > descStart) {
-                  odoTl.call(
-                    () =>
-                      animateElement(
-                        current,
-                        ".stats-description",
-                        96,
-                        1.4,
-                        "power4.out"
-                      ),
-                    [],
-                    descStart
-                  );
-                } else {
-                  odoTl.eventCallback("onComplete", () =>
-                    animateElement(
-                      current,
-                      ".stats-description",
-                      96,
-                      1.4,
-                      "power4.out"
-                    )
-                  );
-                }
-              }
-            }
-          }
-        }
-        window.__lastStatsIndex = idx;
-      }
+      activateStatIndex(idx);
+    },
+    onEnter: () => {
+      activateStatIndex(0);
+    },
+    onEnterBack: (self) => {
+      const idx = Math.min(
+        Math.round(self.progress * (stats.length - 1)),
+        stats.length - 1
+      );
+      activateStatIndex(idx);
     },
   });
 
   showOnly(0);
-  const first = stats[0];
-  if (first) {
-    const numEl = first.querySelector(".stats-number");
-    if (numEl) {
-      buildOdometer(numEl);
-      setOdometerToFinal(numEl);
-    }
-    const symbol = first.querySelector(".stats-symbol");
-    const desc = first.querySelector(".stats-description");
-    if (symbol) gsap.set(symbol, { y: 0, autoAlpha: 1, display: "block" });
-    if (desc) gsap.set(desc, { y: 0, autoAlpha: 1, display: "block" });
-    updateDots(first.getAttribute("data-index") || "1");
-    window.__lastStatsIndex = 0;
-  }
-
-  // No resize handler needed for heights; layout is natural now
+  window.__lastStatsIndex = -1;
 });
