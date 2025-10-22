@@ -2,11 +2,16 @@ gsap.registerPlugin(ScrollTrigger);
 
 // create odometer:
 document.addEventListener("DOMContentLoaded", () => {
+  // Normalize scrolling across devices (touch/wheel/keyboard)
+  if (ScrollTrigger && typeof ScrollTrigger.normalizeScroll === "function") {
+    ScrollTrigger.normalizeScroll(true);
+  }
   const injectStyles = () => {
     if (document.getElementById("odo-style-injected")) return;
     const style = document.createElement("style");
     style.id = "odo-style-injected";
-    style.textContent = `.odo{display:inline-flex;align-items:flex-end}.odo-col{position:relative;display:inline-block;overflow:hidden;vertical-align:bottom}.odo-inner{will-change:transform;display:block}.odo-digit{display:block;line-height:1}.odo-static{display:inline-block}`;
+    // Keep styles minimal and avoid setting line-height or explicit heights to prevent conflicts
+    style.textContent = `.odo{display:inline-flex;align-items:flex-end}.odo-col{position:relative;display:inline-block;overflow:hidden;vertical-align:bottom}.odo-col::before{content:"0";visibility:hidden;display:block}.odo-inner{will-change:transform;position:absolute;top:0;left:0}.odo-digit{display:block}.odo-static{display:inline-block;vertical-align:baseline;align-self:flex-end}.stats-section{touch-action:pan-y;overscroll-behavior:contain}`;
     document.head.appendChild(style);
   };
 
@@ -60,13 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
     el.textContent = "";
     el.appendChild(wrapper);
 
-    const sample = el.querySelector(".odo-digit");
-    const height = sample?.getBoundingClientRect().height || 0;
-    if (height > 0) {
-      el.querySelectorAll(".odo-col").forEach(
-        (c) => (c.style.height = height + "px")
-      );
-    }
+    // No explicit heights; CSS keeps column height via pseudo-element
 
     el.dataset.odoBuilt = "1";
     return el;
@@ -168,7 +167,10 @@ document.addEventListener("DOMContentLoaded", () => {
       end: "+=" + (stats.length - 1) * 300 + "%",
       pin: true,
       scrub: true,
-      markers: true,
+      pinType: "transform", // force transform pinning for iOS Safari / transformed parents
+      anticipatePin: 1,
+      invalidateOnRefresh: true,
+      // markers: true,
     },
   });
 
@@ -249,8 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const odoTl = animateOdometer(numEl);
             if (odoTl) {
-              const offset = 0.1;
-              const startAt = Math.max(0, odoTl.duration() - offset);
+              const startAt = Math.min(0.2, odoTl.duration() * 0.3);
 
               if (symbol) {
                 if (odoTl.duration() > 0) {
@@ -278,7 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
               }
 
               if (desc) {
-                const descStart = startAt;
+                const descStart = startAt + 0.12;
                 if (odoTl.duration() > descStart) {
                   odoTl.call(
                     () =>
@@ -327,4 +328,6 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDots(first.getAttribute("data-index") || "1");
     window.__lastStatsIndex = 0;
   }
+
+  // No resize handler needed for heights; layout is natural now
 });
