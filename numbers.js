@@ -161,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
       anticipatePin: 1,
       invalidateOnRefresh: true,
       snap: snapConfig,
-      // markers: true,
+      markers: true,
     },
   });
 
