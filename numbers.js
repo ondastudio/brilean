@@ -1,7 +1,10 @@
 gsap.registerPlugin(ScrollTrigger);
+
 const qs = (root, sel) => Array.from(root.querySelectorAll(sel));
+
 const injectStyles = () => {
   if (document.getElementById("odo-style-injected")) return;
+
   const style = document.createElement("style");
   style.id = "odo-style-injected";
   style.textContent = `.odo{display:inline-flex;align-items:flex-end}.odo-col{position:relative;display:inline-block;overflow:hidden;vertical-align:bottom}.odo-col::before{content:"0";visibility:hidden;display:block}.odo-inner{will-change:transform;position:absolute;top:0;left:0}.odo-digit{display:block}.odo-static{display:inline-block;vertical-align:baseline;align-self:flex-end}.stats-section{touch-action:pan-y;overscroll-behavior:contain}`;
@@ -123,13 +126,13 @@ const initSection = (section, overrides = {}) => {
   const isTouch =
     ScrollTrigger.isTouch || window.matchMedia("(max-width:768px)").matches;
 
-  const perSlide = isTouch ? 20 : 60;
+  const perSlide = isTouch ? 50 : 60;
 
   const snap =
     stats.length > 1
       ? {
           snapTo: 1 / (stats.length - 1),
-          duration: { min: 0.08, max: 0.25 },
+          duration: { min: isTouch ? 0.2 : 0.08, max: isTouch ? 0.4 : 0.25 },
           ease: "power1.inOut",
         }
       : 1;
@@ -193,7 +196,7 @@ const initSection = (section, overrides = {}) => {
       start: "center center",
       end: "+=" + (stats.length - 1) * perSlide * 2 + "%",
       pin: true,
-      scrub: isTouch ? 0.25 : true,
+      scrub: isTouch ? 1.5 : true,
       anticipatePin: 1,
       invalidateOnRefresh: true,
       snap,
