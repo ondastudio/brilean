@@ -126,7 +126,7 @@ const initSection = (section, overrides = {}) => {
   const isTouch =
     ScrollTrigger.isTouch || window.matchMedia("(max-width:768px)").matches;
 
-  const perSlide = isTouch ? 200 : 60;
+  const perSlide = isTouch ? 130 : 60;
 
   const snap =
     stats.length > 1
