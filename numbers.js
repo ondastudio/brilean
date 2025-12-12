@@ -126,14 +126,15 @@ const initSection = (section, overrides = {}) => {
   const isTouch =
     ScrollTrigger.isTouch || window.matchMedia("(max-width:768px)").matches;
 
-  const perSlide = isTouch ? 50 : 60;
+  const perSlide = isTouch ? 200 : 60;
 
   const snap =
     stats.length > 1
       ? {
           snapTo: 1 / (stats.length - 1),
-          duration: { min: isTouch ? 0.2 : 0.08, max: isTouch ? 0.4 : 0.25 },
+          duration: { min: isTouch ? 0.3 : 0.08, max: isTouch ? 0.6 : 0.25 },
           ease: "power1.inOut",
+          directional: true,
         }
       : 1;
 
@@ -194,7 +195,7 @@ const initSection = (section, overrides = {}) => {
     scrollTrigger: {
       trigger: section,
       start: "center center",
-      end: "+=" + (stats.length - 1) * perSlide * 2 + "%",
+      end: "+=" + (stats.length - 1) * perSlide * (isTouch ? 3 : 2) + "%",
       pin: true,
       scrub: isTouch ? 1.5 : true,
       anticipatePin: 1,
