@@ -126,7 +126,7 @@ const initSection = (section, overrides = {}) => {
   const isTouch =
     ScrollTrigger.isTouch || window.matchMedia("(max-width:768px)").matches;
 
-  const perSlide = isTouch ? 80 : 50;
+  const perSlide = isTouch ? 70 : 60;
 
   const snap =
     stats.length > 1
@@ -195,9 +195,10 @@ const initSection = (section, overrides = {}) => {
     scrollTrigger: {
       trigger: section,
       start: "center center",
-      end: "+=" + (stats.length - 1) * perSlide + "%",
+      end: "+=" + (stats.length - 1) * perSlide * 2 + "%",
       pin: true,
-      scrub: isTouch ? 0.8 : true,
+      // Mobile: still smoothed, but less draggy than before
+      scrub: isTouch ? 1 : true,
       anticipatePin: 1,
       invalidateOnRefresh: true,
       snap,
@@ -223,7 +224,7 @@ const initSection = (section, overrides = {}) => {
   ScrollTrigger.create({
     trigger: section,
     start: "center center",
-    end: "+=" + (stats.length - 1) * perSlide + "%",
+    end: "+=" + (stats.length - 1) * perSlide * 2 + "%",
     onUpdate: (self) =>
       activate(
         Math.min(
